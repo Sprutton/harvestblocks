@@ -1,0 +1,142 @@
+$ apt update
+$ apt upgrade
+
+--
+
+apt install python3-pip python3-dev libpq-dev postgresql postgresql-contrib nginx
+apt install certbot python3-certbot-nginx
+
+--
+
+CREATE DATABASE harvestblocks;
+CREATE USER harvestblocksuser WITH PASSWORD 'harvestblockspassword';
+
+ALTER ROLE harvestblocksuser SET client_encoding TO 'utf8';
+ALTER ROLE harvestblocksuser SET default_transaction_isolation TO 'read committed';
+ALTER ROLE harvestblocksuser SET timezone TO 'UTC';
+
+GRANT ALL PRIVILEGES ON DATABASE harvestblocks TO harvestblocksuser;
+
+--
+
+sudo -H pip3 install --upgrade pip
+sudo -H pip3 install virtualenv
+
+--
+
+sudo groupadd --system webapps
+sudo useradd --system --gid webapps --shell /bin/bash --home /webapps/harvestblocks harvestblocks
+
+--
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'harvestblocks',
+        'USER': 'harvestblocksuser',
+        'PASSWORD': 'harvestblockspassword',
+        'HOST': 'localhost',
+        'PORT': '',
+    }
+}
+
+--
+
+bin/gunicorn_start
+
+#!/bin/sh
+
+NAME='harvestblocks'
+DJANGODIR=/webapps/harvestblocks/harvestblocks_env/webapps
+SOCKFILE=/webapps/harvestblocks/harvestblocks_env/run/gunicorn.sock
+USER=harvestblocks
+GROUP=webapps
+NUM_WORKERS=3
+DJANGO_SETTINGS_MODULE=harvestblocks.settingsprod
+DJANGO_WSGI_MODULE=harvestblocks.wsgi
+TIMEOUT=120
+
+cd $DJANGODIR
+source ../bin/activate
+export DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
+export PYTHONPATH=$DJANGODIR:$PYTHONPATH
+
+RUNDIR=$(dirname $SOCKFILE)
+test -d $RUNDIR || mkdir -p $RUNDIR
+
+exec ../bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
+--name $NAME \
+--workers $NUM_WORKERS \
+--timeout $TIMEOUT \
+--user=$USER --group=$GROUP \
+--bind=unix:$SOCKFILE \
+--log-level=debug \
+--log-file=-
+
+--
+
+supervisor (harvestblocks.conf)
+
+[program:harvestblocks]
+command = /webapps/harvestblocks/harvestblocks_env/bin/gunicorn_start
+user = harvestblocks
+stdout_logfile = /webapps/harvestblocks/harvestblocks_env/logs/supervisor.log
+redirect_stderr = true
+environment=LANG=en_US.UTF-8,LC_ALL=en_US.UTF-8
+
+--
+
+supervisorctl reread
+supervisorctl update
+
+--
+
+Nginx (harvestblocks.conf)
+
+upstream harvestblocks_app_server {
+    server unix:/webapps/harvestblocks/harvestblocks_env/run/gunicorn.sock fail_timeout=0;
+}
+
+server {
+    listen 80;
+    server_name harvestblocks.codewithstein.com;
+    return 301 https://harvestblocks.codewithstein.com$request_uri;
+}
+
+
+server {
+    listen 443 ssl;
+    server_name harvestblocks.codewithstein.com;
+
+    client_max_body_size 4G;
+
+    access_log /webapps/harvestblocks/harvestblocks_env/logs/nginx-access.log;
+    error_log /webapps/harvestblocks/harvestblocks_env/logs/nginx-error.log;
+
+    ssl_certificate /etc/letsencrypt/live/harvestblocks.codewithstein.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/harvestblocks.codewithstein.com/privkey.pem;
+
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers 'EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH';
+
+    location /static/ {
+        alias /webapps/harvestblocks/harvestblocks_env/harvestblocks/static/;
+    }
+
+    location /media/ {
+        alias /webapps/harvestblocks/harvestblocks_env/harvestblocks/media/;
+    }
+
+    location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        proxy_set_header Host $http_host;
+
+        proxy_redirect off;
+
+        if (!-f $request_filename) {
+            proxy_pass http://harvestblocks_app_server;
+        }
+    }
+}
