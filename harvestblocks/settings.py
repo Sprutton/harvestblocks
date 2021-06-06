@@ -23,7 +23,7 @@ DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 SECRET_KEY = 'django-insecure-h&3=poc0hg+0aytw$ndcb%g9xz+owx@vuqo#p4$(*3r-%m!b@4'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['https://radiant-spire-85282.herokuapp.com/','radiant-spire-85282.herokuapp.com','http://127.0.0.1:8000/','www.harvestblocks.com']
 
