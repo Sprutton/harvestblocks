@@ -98,11 +98,15 @@ WSGI_APPLICATION = 'harvestblocks.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'd1b8ht75o8at5f',
+        'HOST': 'ec2-35-170-85-206.compute-1.amazonaws.com',
+        'PORT': 5432,
+        'USER': 'psowutveozwgfp',
+        'PASSWORD': 'b37b3b0822bdaf1777d96562d6f77d40643c99dfa6136bbe76f26a0658c136ea'
+
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
