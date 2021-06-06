@@ -23,7 +23,7 @@ DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 SECRET_KEY = 'django-insecure-h&3=poc0hg+0aytw$ndcb%g9xz+owx@vuqo#p4$(*3r-%m!b@4'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['https://radiant-spire-85282.herokuapp.com/','radiant-spire-85282.herokuapp.com','http://127.0.0.1/']
 
@@ -68,6 +68,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'harvestblocks.urls'
@@ -103,7 +104,7 @@ DATABASES = {
         'HOST': 'ec2-35-170-85-206.compute-1.amazonaws.com',
         'PORT': 5432,
         'USER': 'psowutveozwgfp',
-        'PASSWORD': 'b37b3b0822bdaf1777d96562d6f77d40643c99dfa6136bbe76f26a0658c136ea'
+        'PASSWORD': 'b37b3b0822bdaf1777d96562d6f77d40643c99dfa6136bbe76f26a0658c136ea',
 
     }
 }
